@@ -1,0 +1,19 @@
+{
+  "name": "Neon Assistant Console",
+  "short_name": "NAC",
+  "description": "Personal assistant command console — calendar, email, tasks, LinkedIn drafts, cron jobs.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0c0f14",
+  "theme_color": "#0c0f14",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
