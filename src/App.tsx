@@ -1,40 +1,80 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  initialLog,
-  sampleAnomalies,
-  vitals,
-  cronJobs,
-  calendarPreview,
-  liveActivity,
   type LogLine,
-} from "./mockData";
+  type Anomaly,
+  type CronJob,
+  type CalendarEvent,
+  type LinkedInDraft,
+} from "./types";
+
+const DATA_URL =
+  "https://raw.githubusercontent.com/coolgeekme/neon-assistant-console/main/public/dashboard-data.json";
+
+const initialLog: LogLine[] = [
+  {
+    id: "l1",
+    ts: "08:02:11",
+    role: "hermes",
+    text: "SYSTEM INITIALIZATION. Secure tunnel established. Neon Assistant Console v1.1 initialized. Fetching live data...",
+  },
+];
 
 function nowStamp(): string {
-  const d = new Date();
-  return d.toTimeString().slice(0, 8);
+  return new Date().toTimeString().slice(0, 8);
 }
-
-const TONE: Record<string, string> = {
-  green: "text-neon-green border-neon-green/40",
-  blue: "text-neon-blue border-neon-blue/40",
-  purple: "text-neon-purple border-neon-purple/40",
-  amber: "text-amber-300 border-amber-300/40",
-};
 
 export default function App() {
   const [log, setLog] = useState<LogLine[]>(initialLog);
-  const [activity, setActivity] = useState<number[]>(() => liveActivity());
+  const [cal, setCal] = useState<CalendarEvent[]>([]);
+  const [cron, setCron] = useState<CronJob[]>([]);
+  const [linkedin, setLinkedin] = useState<LinkedInDraft | null>(null);
+  const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [lastSync, setLastSync] = useState<string>("");
   const [cmd, setCmd] = useState("");
-  const [minimized, setMinimized] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Live activity bars
+  async function loadData() {
+    setLoading(true);
+    try {
+      const res = await fetch(DATA_URL + "?t=" + Date.now(), { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const d = await res.json();
+      setCal(d.calendar ?? []);
+      setCron(d.cron ?? []);
+      setLinkedin(d.linkedin?.exists ? d.linkedin : null);
+      setAnomalies(d.anomalies ?? []);
+      setLastSync(new Date().toLocaleTimeString());
+      setLog((l) => [
+        ...l,
+        {
+          id: "sync" + Date.now(),
+          ts: nowStamp(),
+          role: "hermes",
+          text: `Data synced · ${cal.length || (d.calendar?.length ?? 0)} events · ${d.cron?.length ?? 0} cron · ${d.linkedin?.exists ? "1 draft" : "no draft"}.`,
+        },
+      ]);
+    } catch (e) {
+      setLog((l) => [
+        ...l,
+        {
+          id: "err" + Date.now(),
+          ts: nowStamp(),
+          role: "hermes",
+          text: "Sync failed — dashboard-data.json unreachable. Run the exporter on the host.",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // On-open refresh
   useEffect(() => {
-    const t = setInterval(() => setActivity(liveActivity()), 1800);
-    return () => clearInterval(t);
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-scroll chat
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [log]);
@@ -66,14 +106,19 @@ export default function App() {
           </span>
         </div>
         <div className="flex items-center gap-3 text-neon-cyan/70">
-          <span title="cloud">☁</span>
+          <button onClick={loadData} disabled={loading} title="refresh" className={loading ? "opacity-50" : ""}>
+            {loading ? "⟳" : "↻"}
+          </button>
           <span title="grid">▦</span>
           <span title="profile">◍</span>
         </div>
       </header>
+      {lastSync && (
+        <div className="text-[10px] text-gray-500 text-right -mt-1">synced {lastSync}</div>
+      )}
 
       {/* Command log */}
-      <section className="glass rounded-2xl p-3 flex-1 min-h-[260px] flex flex-col">
+      <section className="glass rounded-2xl p-3 flex-1 min-h-[200px] flex flex-col">
         <div ref={scrollRef} className="overflow-y-auto flex-1 flex flex-col gap-2 pr-1">
           {log.map((l) => (
             <div key={l.id} className="text-sm leading-relaxed">
@@ -106,7 +151,12 @@ export default function App() {
 
       {/* Anomaly alerts */}
       <section className="flex flex-col gap-2">
-        {sampleAnomalies.map((a) => (
+        {anomalies.length === 0 && (
+          <div className="glass rounded-xl p-3 border border-neon-green/30 text-xs text-neon-green">
+            ✓ No anomalies detected
+          </div>
+        )}
+        {anomalies.map((a) => (
           <div
             key={a.id}
             className={`glass rounded-xl p-3 border ${
@@ -132,85 +182,65 @@ export default function App() {
               <span className="text-[10px] text-gray-500">ANOMALY_DETECTED</span>
             </div>
             <p className="text-sm text-gray-300 mt-1">{a.detail}</p>
-            <div className="flex gap-2 mt-2">
-              <button className="text-[11px] px-2 py-1 rounded bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/30">
-                VIEW_LOGS
-              </button>
-              <button className="text-[11px] px-2 py-1 rounded bg-neon-purple/10 text-neon-purple border border-neon-purple/30">
-                SUGGEST_FIX
-              </button>
-            </div>
           </div>
         ))}
       </section>
 
-      {/* Quick panels: calendar + cron */}
+      {/* Calendar + Cron */}
       <section className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <div className="glass rounded-xl p-3">
           <div className="text-xs text-neon-purple/80 mb-2">TODAY_PREVIEW</div>
-          <ul className="flex flex-col gap-1.5">
-            {calendarPreview.map((e, i) => (
-              <li key={i} className="text-xs flex gap-2">
-                <span className="text-neon-cyan w-16 shrink-0">{e.time}</span>
-                <span className="text-gray-500 w-28 shrink-0 hidden sm:inline">[{e.cal}]</span>
-                <span className="text-gray-300 truncate">{e.title}</span>
-              </li>
-            ))}
-          </ul>
+          {cal.length === 0 ? (
+            <div className="text-xs text-gray-600">No events / sync pending</div>
+          ) : (
+            <ul className="flex flex-col gap-1.5">
+              {cal.map((e, i) => (
+                <li key={i} className="text-xs flex gap-2">
+                  <span className="text-neon-cyan w-16 shrink-0">{e.time}</span>
+                  <span className="text-gray-500 w-28 shrink-0 hidden sm:inline">[{e.cal}]</span>
+                  <span className="text-gray-300 truncate">{e.title}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         <div className="glass rounded-xl p-3">
           <div className="text-xs text-neon-purple/80 mb-2">CRON_PULSE</div>
-          <ul className="flex flex-col gap-1.5">
-            {cronJobs.map((c, i) => (
-              <li key={i} className="text-xs flex gap-2 items-center">
-                <span className={`w-1.5 h-1.5 rounded-full ${c.status === "ok" ? "bg-neon-green animate-pulse2" : "bg-gray-600"}`} />
-                <span className="text-gray-300 flex-1 truncate">{c.name}</span>
-                <span className="text-neon-cyan/70">{c.az}</span>
-              </li>
-            ))}
-          </ul>
+          {cron.length === 0 ? (
+            <div className="text-xs text-gray-600">No jobs / sync pending</div>
+          ) : (
+            <ul className="flex flex-col gap-1.5">
+              {cron.map((c, i) => (
+                <li key={i} className="text-xs flex gap-2 items-center">
+                  <span className={`w-1.5 h-1.5 rounded-full ${c.status === "ok" ? "bg-neon-green animate-pulse2" : "bg-rose-400"}`} />
+                  <span className="text-gray-300 flex-1 truncate">{c.name}</span>
+                  <span className="text-neon-cyan/70">{c.schedule}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </section>
 
-      {/* Vitals dashboard */}
-      <section className="glass rounded-2xl p-3">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-neon-cyan neon-text">BRAIN_RECALL_Vitals</span>
-          <span className="text-[10px] text-gray-500">VER_1.0.0</span>
-        </div>
-
-        {/* ACTV chart */}
-        <div className="mt-3 flex items-end gap-1 h-20">
-          {activity.map((v, i) => (
-            <div key={i} className="flex-1 rounded-t bg-gradient-to-t from-neon-cyan/20 to-neon-cyan/70" style={{ height: `${v}%` }}>
-              {i === 1 && <div className="w-full h-full bg-white/80 rounded-t" />}
+      {/* LinkedIn draft */}
+      <section className="glass rounded-xl p-3">
+        <div className="text-xs text-neon-purple/80 mb-2">LINKEDIN_DRAFT</div>
+        {!linkedin ? (
+          <div className="text-xs text-gray-600">No draft pending</div>
+        ) : (
+          <div className="text-xs">
+            <div className="text-gray-400 mb-1">
+              {linkedin.file} · {linkedin.date} · {linkedin.age_days === 0 ? "today" : linkedin.age_days + "d old"}
             </div>
-          ))}
-        </div>
-        <div className="text-[10px] text-gray-500 mt-1">ACTV</div>
-
-        {/* Status cards */}
-        <div className="grid grid-cols-2 gap-2 mt-3">
-          {vitals.map((v) => (
-            <div key={v.label} className={`glass rounded-xl p-2 border ${TONE[v.tone]}`}>
-              <div className="flex items-center gap-2">
-                <span className="text-lg">{v.icon}</span>
-                <div className="leading-tight">
-                  <div className="text-[10px] text-gray-500">{v.label}</div>
-                  <div className="text-xs text-gray-200">{v.value}</div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-2 flex items-center justify-center gap-1 text-[10px] text-gray-500">
-          <button onClick={() => setMinimized((m) => !m)}>▾ MINIMIZE_VITALS</button>
-        </div>
+            <pre className="text-gray-300 whitespace-pre-wrap text-[11px] max-h-40 overflow-y-auto">
+              {linkedin.preview}
+            </pre>
+          </div>
+        )}
       </section>
 
       <footer className="text-center text-[10px] text-gray-600 py-2">
-        Demo PWA · mock data · wire to live assistant to enable commands
+        Live PWA · data via dashboard-data.json · wire command bar to agent for actions
       </footer>
     </div>
   );

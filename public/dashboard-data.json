@@ -1,0 +1,67 @@
+{
+  "generated_at": "2026-07-27T14:02:49.468539-07:00",
+  "calendar": [
+    {
+      "time": "08:00 AM",
+      "cal": "Reggie-Archeforge",
+      "title": "(no title)"
+    },
+    {
+      "time": "10:30 AM",
+      "cal": "Reggie Alcos Gmail",
+      "title": "Life Time Work"
+    },
+    {
+      "time": "02:30 PM",
+      "cal": "CoolGeek",
+      "title": "Camp Pickup"
+    },
+    {
+      "time": "04:00 PM",
+      "cal": "CoolGeek + Reggie Alcos Gmail",
+      "title": "Bronze Swim Practice - Enzo"
+    },
+    {
+      "time": "05:00 PM",
+      "cal": "CoolGeek + Reggie Alcos Gmail",
+      "title": "Gold Swim Practice - Diego"
+    },
+    {
+      "time": "06:45 PM",
+      "cal": "CoolGeek",
+      "title": "\ud83d\ude0e Decompress"
+    }
+  ],
+  "cron": [
+    {
+      "name": "Daily Calendar Brief - 6:30 AM",
+      "schedule": "30 13 * * *",
+      "next_run_at": "2026-07-28T13:30:00+00:00",
+      "status": "ok",
+      "deliver": "origin"
+    },
+    {
+      "name": "Daily Calendar Brief - 9 PM",
+      "schedule": "0 4 * * *",
+      "next_run_at": "2026-07-28T04:00:00+00:00",
+      "status": "ok",
+      "deliver": "origin"
+    },
+    {
+      "name": "Daily LinkedIn AI news draft",
+      "schedule": "15 13 * * *",
+      "next_run_at": "2026-07-28T13:15:00+00:00",
+      "status": "ok",
+      "deliver": "origin"
+    }
+  ],
+  "linkedin": {
+    "exists": true,
+    "file": "ai-news-2026-07-27.md",
+    "date": "Mon Jul 27",
+    "age_days": 0,
+    "preview_chars": 2800,
+    "preview": "# LinkedIn AI News Roundup \u2014 July 27, 2026\n\n## SHORT VERSION\n\nBig weekend in AI. Three things worth knowing:\n\n1. Anthropic dropped Claude Opus 5 \u2014 near-frontier smarts at half the price. Powerful AI just got a lot cheaper for everyday work.\n2. Moonshot's Kimi K3 open weights are landing \u2014 2.8 trillion parameters, the biggest open model ever. You can now run frontier-class AI yourself.\n3. Researchers found AI chatbots citing Russian propaganda from EU-sanctioned outlets. Double-check what your chatbot tells you about the news.\n\nCheaper, more open, and messier all at once. Which one matters most"
+  },
+  "anomalies": []
+}
