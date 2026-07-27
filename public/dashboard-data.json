@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-27T14:02:49.468539-07:00",
+  "generated_at": "2026-07-27T14:08:09.217194-07:00",
   "calendar": [
     {
       "time": "08:00 AM",
@@ -51,6 +51,13 @@
       "name": "Daily LinkedIn AI news draft",
       "schedule": "15 13 * * *",
       "next_run_at": "2026-07-28T13:15:00+00:00",
+      "status": "ok",
+      "deliver": "origin"
+    },
+    {
+      "name": "Dashboard Data Export",
+      "schedule": "*/15 * * * *",
+      "next_run_at": "2026-07-27T21:15:00+00:00",
       "status": "ok",
       "deliver": "origin"
     }
